@@ -39,7 +39,7 @@ if(!db.reviews||!db.reviews.length){
   ];
 }
 
-let role='Customer',screen='login',category='All items',search='',table=+(new URLSearchParams(location.search).get('table')||5),selected=1,detailQty=1,filter='All',period='Today',coupon=0,tip=0,payMethod='UPI',sound=true,auto=false,activeOrder=null;
+let role='Customer',screen='menu',category='All items',search='',table=+(new URLSearchParams(location.search).get('table')||5),selected=1,detailQty=1,filter='All',period='Today',coupon=0,tip=0,payMethod='UPI',sound=true,auto=false,activeOrder=null;
 let dietFilter='All',sortFilter='Recommended',reviewRating=5;
 let resDate=new Date().toISOString().slice(0,10),resTime='8:00 PM',resArea='Rooftop Garden',resGuests=2;
 
@@ -95,8 +95,34 @@ function setRole(r){
   role=r;
   go({Customer:'menu',Waiter:'tables','Kitchen Staff':'kitchen',Owner:'dashboard'}[r]||'menu');
 }
-function logout(){go('login')}
+function staffLogin(){
+  role = (role==='Customer'?'Waiter':role);
+  screen = 'login';
+  closeModal();
+  render();
+}
+function exitStaff(){
+  role = 'Customer';
+  go('menu');
+  toast('Returned to Customer Dining Menu');
+}
+function logout(){exitStaff()}
 function chooseRole(r){role=r;renderLogin()}
+function serviceCallModal(){
+  modal(`
+    <div style="padding:4px">
+      <div class="eyebrow" style="color:var(--accent);font-weight:700">${icon('bell')} TABLE ${String(table).padStart(2,'0')} SERVICE</div>
+      <h2 style="font-size:20px;margin:8px 0 4px">Request Table Assistance</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Floor staff is notified instantly on their station:</p>
+      <div class="quick-service-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px">
+        <button class="service-action-btn" onclick="requestService('Water Refill');closeModal()">${icon('droplet')} Water Refill</button>
+        <button class="service-action-btn" onclick="requestService('Extra Cutlery & Napkins');closeModal()">${icon('slash-circle')} Cutlery & Napkins</button>
+        <button class="service-action-btn" onclick="requestService('Clear Table');closeModal()">${icon('stars')} Clear Table</button>
+        <button class="service-action-btn" onclick="requestService('Call Waiter');closeModal()">${icon('person-raised-hand')} Call Waiter</button>
+      </div>
+    </div>
+  `);
+}
 
 const navs={
   Customer:[
@@ -104,7 +130,7 @@ const navs={
     ['tracking','bag-check','My orders'],
     ['payment','receipt','My bill'],
     ['reservations','calendar-check','Book table'],
-    ['table-select','qr-code-scan','Choose table']
+    ['table-select','qr-code-scan','Table']
   ],
   Waiter:[
     ['tables','grid-1x2','Tables'],
@@ -146,7 +172,7 @@ function render(){
     <div class="shell">
       <aside class="sidebar">
         ${brand()}
-        <div class="navlabel">WORKSPACE</div>
+        <div class="navlabel">${role==='Customer'?'DINING MENU':'STAFF WORKSPACE'}</div>
         ${nav.map(n=>`
           <button class="navbutton ${screen===n[0]?'active':''}" onclick="go('${n[0]}')">
             ${icon(n[1])}${n[2]}
@@ -154,27 +180,52 @@ function render(){
           </button>
         `).join('')}
         <div class="sidefoot">
-          <div class="helpbox">
-            ${icon('stars')}<br>
-            <strong>Investor Pitch Tour</strong>
-            <p>Explore this end-to-end restaurant OS demo across all operational roles.</p>
-            ${b('Pitch Demo Tour '+icon('arrow-up-right'),'pitchTourModal()','btns full')}
-          </div>
-          <button class="navbutton" onclick="logout()">${icon('box-arrow-left')} Sign out</button>
-          <small style="font-size:9px;padding-left:15px">URBAN PLATE OS · DEMO V2.4</small>
+          ${role==='Customer'?`
+            <div class="helpbox" style="background:#fff7f2;border:1px solid #f8dfd1">
+              ${icon('geo-alt-fill')}<br>
+              <strong>Table ${String(table).padStart(2,'0')}</strong>
+              <p>Need extra cutlery, water refill, or assistance?</p>
+              ${b(icon('bell')+' Call Waiter','serviceCallModal()','btns full')}
+            </div>
+            <button class="navbutton" onclick="staffLogin()">${icon('shield-lock')} Staff Portal</button>
+          `:`
+            <div class="helpbox">
+              ${icon('stars')}<br>
+              <strong>Investor Pitch Tour</strong>
+              <p>Explore this end-to-end restaurant OS demo across all operational roles.</p>
+              ${b('Pitch Demo Tour '+icon('arrow-up-right'),'pitchTourModal()','btns full')}
+            </div>
+            <button class="navbutton" onclick="exitStaff()">${icon('box-arrow-left')} Exit to Dining Menu</button>
+          `}
+          <small style="font-size:9px;padding-left:15px;display:block;margin-top:4px;color:var(--muted)">URBAN PLATE OS · DEMO V2.4</small>
         </div>
       </aside>
       <main class="main">
         <header class="topbar">
-          <div class="crumb">Workspace <span style="margin:0 12px">/</span> <strong>${titles[screen]||'The Urban Plate'}</strong></div>
+          <div class="crumb">
+            ${role==='Customer'
+              ?`<strong>Table ${String(table).padStart(2,'0')}</strong> <span style="margin:0 10px;color:var(--muted)">/</span> <span>${titles[screen]||'The Urban Plate'}</span>`
+              :`<span class="badge-soft badge-orange" style="font-weight:700;font-size:10px;margin-right:8px">${role.toUpperCase()}</span> <strong>${titles[screen]||'Workspace'}</strong>`
+            }
+          </div>
           <div class="topright">
-            ${b(icon('stars')+' Pitch Demo','pitchTourModal()','btns pitchbtn')}
-            <span class="live">Restaurant open</span>
-            <select aria-label="Switch role" onchange="setRole(this.value)">
-              ${Object.keys(navs).map(r=>`<option ${role===r?'selected':''}>${r}</option>`).join('')}
-            </select>
-            ${b(icon('bell'),'notifications()','iconbtn')}
-            <div class="avatar">${role==='Owner'?'AK':role==='Waiter'?'AS':role==='Kitchen Staff'?'RK':'YU'}</div>
+            ${role==='Customer'?`
+              <button class="btns callwaiterbtn" onclick="serviceCallModal()" style="font-size:11px;padding:7px 12px;display:inline-flex;align-items:center;gap:6px">
+                ${icon('bell')} Call Waiter
+              </button>
+              <button class="btns staffbtn" onclick="staffLogin()" style="font-size:11px;padding:7px 12px;display:inline-flex;align-items:center;gap:6px">
+                ${icon('shield-lock')} Staff Portal
+              </button>
+            `:`
+              ${b(icon('stars')+' Pitch Demo','pitchTourModal()','btns pitchbtn')}
+              <span class="live">${role}</span>
+              <select aria-label="Switch staff role" onchange="setRole(this.value)">
+                ${['Waiter','Kitchen Staff','Owner'].map(r=>`<option ${role===r?'selected':''}>${r}</option>`).join('')}
+              </select>
+              ${b(icon('bell'),'notifications()','iconbtn')}
+              <div class="avatar">${role==='Owner'?'AK':role==='Waiter'?'AS':'RK'}</div>
+              <button class="btns" style="font-size:11px;padding:7px 10px" onclick="exitStaff()" title="Exit Staff Portal">${icon('box-arrow-right')} Exit</button>
+            `}
           </div>
         </header>
         <div class="content">
@@ -196,7 +247,7 @@ function render(){
       </main>
       <nav class="bottomnav">
         ${nav.map(n=>`<button class="${screen===n[0]?'active':''}" onclick="go('${n[0]}')">${icon(n[1])}<span>${n[2]}</span></button>`).join('')}
-        <button onclick="switcher()">${icon('arrow-left-right')}<span>Roles</span></button>
+        ${role!=='Customer'?`<button onclick="switcher()">${icon('arrow-left-right')}<span>Roles</span></button>`:''}
       </nav>
     </div>
     ${screen==='menu'&&db.cart.length?b(icon('bag')+` ${db.cart.reduce((n,x)=>n+x.qty,0)} items · ${money(subtotal(db.cart))} <span style="margin-left:25px">View cart →</span>`,'cartDrawer()','cartfloat'):''}
@@ -209,9 +260,12 @@ function title(t,sub,act=''){
 
 function switcher(){
   modal(`
-    <h2>Your workspace, your way.</h2>
-    <p>Switch roles to follow an order through the restaurant.</p>
-    ${Object.keys(navs).map(r=>b(r+icon('arrow-right'),`setRole('${r}')`,'btns full mb-2')).join('')}
+    <h2>Switch Operational Station</h2>
+    <p>Jump directly between floor, kitchen, and executive stations:</p>
+    ${['Waiter','Kitchen Staff','Owner'].map(r=>b(r+icon('arrow-right'),`setRole('${r}')`,'btns full mb-2')).join('')}
+    <div style="margin-top:14px;border-top:1px solid #ebece4;padding-top:14px;text-align:center">
+      <button class="btns" style="font-size:11px;padding:8px 16px" onclick="exitStaff();closeModal()">${icon('arrow-left')} Return to Dining Menu</button>
+    </div>
   `);
 }
 
@@ -309,52 +363,60 @@ function pitchTourModal(){
 }
 
 function renderLogin(){
+  if(role==='Customer') role='Waiter';
   $('#app').innerHTML=`
     <main class="login">
       <section class="loginart">
         <img src="${photos.hero}" alt="Warm and inviting restaurant interior">
         ${brand()}
         <div class="loginquote">
-          <div class="eyebrow" style="color:#d9d4b6">WELCOME TO THE URBAN PLATE</div>
-          <h1>Good food.<br>Great company.<br>Seamless service.</h1>
-          <p>A thoughtfully connected dining experience, from the first order to the last bite.</p>
-          <small style="color:#c7d1bb">CRAFTED WITH CARE. SERVED WITH HEART.</small>
+          <div class="eyebrow" style="color:#d9d4b6">RESTAURANT STAFF PORTAL</div>
+          <h1>Connected Floor.<br>Smart Kitchen.<br>Real-Time Sync.</h1>
+          <p>Secure operational access for floor staff, kitchen crew, and restaurant management.</p>
+          <small style="color:#c7d1bb">THE URBAN PLATE OPERATING SYSTEM</small>
         </div>
       </section>
       <section class="loginpanel">
         <form class="loginform" onsubmit="event.preventDefault();login()">
-          <span class="eyebrow">YOUR TABLE IS WAITING</span>
-          <h1>Welcome back.</h1>
-          <p>Make yourself at home. Choose your workspace.</p>
+          <span class="eyebrow">STAFF AUTHENTICATION</span>
+          <h1>Staff Workspace</h1>
+          <p>Select your operational station to access real-time tools.</p>
           <div class="roles">
-            ${[['Customer','cup-hot'],['Waiter','person-badge'],['Kitchen Staff','fire'],['Owner','bar-chart']].map(r=>`
+            ${[['Waiter','person-badge'],['Kitchen Staff','fire'],['Owner','bar-chart']].map(r=>`
               <button type="button" class="role ${role===r[0]?'active':''}" onclick="chooseRole('${r[0]}')">
                 ${icon(r[1])}${r[0]}
               </button>
             `).join('')}
           </div>
           <div class="field">
-            <label for="username">Email or username</label>
-            <input id="username" class="input" placeholder="you@urbanplate.com" autocomplete="username" value="${esc(localStorage.getItem('up-remember')||'')}">
+            <label for="username">Staff ID / Email</label>
+            <input id="username" class="input" placeholder="e.g. arjun@urbanplate.com" autocomplete="username" value="${esc(localStorage.getItem('up-remember')||'')}">
           </div>
           <div class="field">
-            <label for="password">Password</label>
+            <label for="password">Security PIN / Password</label>
             <div class="password">
-              <input id="password" class="input" type="password" placeholder="Enter your password" autocomplete="current-password">
+              <input id="password" class="input" type="password" placeholder="Enter staff PIN" autocomplete="current-password" value="••••••">
               <button class="iconbtn" type="button" aria-label="Show or hide password" onclick="let p=$('#password');p.type=p.type==='password'?'text':'password'">${icon('eye')}</button>
             </div>
           </div>
-          <div class="flex between" style="margin:20px 0 25px;font-size:11px">
-            <label><input id="remember" type="checkbox" style="accent-color:var(--accent)"> Remember me</label>
-            <span class="muted">No password needed for demo</span>
+          <div class="flex between" style="margin:16px 0 20px;font-size:11px">
+            <label><input id="remember" type="checkbox" style="accent-color:var(--accent)"> Remember station</label>
+            <span class="muted">Instant demo access</span>
           </div>
           <button class="btnp full" type="submit" style="padding:14px">
-            Enter ${role==='Customer'?'restaurant':role==='Owner'?'dashboard':'workspace'} <span style="float:right">→</span>
+            Launch ${role==='Owner'?'Executive Dashboard':role==='Kitchen Staff'?'Kitchen Display':'Floor Workspace'} <span style="float:right">→</span>
           </button>
-          <div class="demoinfo">
-            ${icon('stars')} <strong>Investor Demo Mode:</strong> Choose any role above or click "Pitch Demo" anytime to explore the full lifecycle.
+          
+          <div style="margin-top:14px;text-align:center">
+            <button type="button" class="btns full" style="font-size:11px;padding:10px" onclick="exitStaff()">
+              ${icon('arrow-left')} Return to Customer Dining Menu
+            </button>
           </div>
-          <p style="font-size:10px;text-align:center;margin-top:32px">THE URBAN PLATE · RESTAURANT OS V2.4</p>
+
+          <div class="demoinfo" style="margin-top:16px">
+            ${icon('stars')} <strong>Demo Mode:</strong> Select any staff role above and click Launch to enter that synchronized workspace.
+          </div>
+          <p style="font-size:10px;text-align:center;margin-top:20px;color:var(--muted)">THE URBAN PLATE · RESTAURANT OS V2.4</p>
         </form>
       </section>
     </main>

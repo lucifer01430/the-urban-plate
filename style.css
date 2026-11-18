@@ -33,6 +33,10 @@
 .dietchip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:6px 13px;font-size:11px;font-weight:600;color:#787e70;white-space:nowrap;cursor:pointer}
 .dietchip.active{background:#2a4436;color:#fff;border-color:#2a4436}
 .sortselect{padding:7px 12px;font-size:11px;border-radius:8px;border:1px solid var(--line);background:#fff;color:#555c50;width:auto}
+.callwaiterbtn{border-color:#dedad0;background:#fff;color:#4f5247}
+.callwaiterbtn:hover{background:#f6f7f1;color:var(--dark)}
+.staffbtn{border-color:#edd4c8;background:#fff7f2;color:#b15335;font-weight:600}
+.staffbtn:hover{background:#fae9de;border-color:var(--accent)}
 @media(max-width:760px){
 .quick-service-grid{grid-template-columns:repeat(2,1fr);gap:8px}
 .res-grid{grid-template-columns:1fr;gap:18px}
@@ -53,4 +57,6 @@ html,body{overflow-x:hidden}
 .titlebar{flex-wrap:wrap;gap:12px;margin-bottom:18px}
 .cartfloat{bottom:calc(66px + max(10px,env(safe-area-inset-bottom)));left:14px;right:14px;width:calc(100% - 28px)}
 .modalpanel{max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.callwaiterbtn{padding:5px 8px;font-size:10px}
+.staffbtn{padding:5px 8px;font-size:10px}
 }
