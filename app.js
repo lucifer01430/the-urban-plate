@@ -195,8 +195,8 @@ function render(){
         </div>
       </main>
       <nav class="bottomnav">
-        ${nav.map(n=>`<button class="${screen===n[0]?'active':''}" onclick="go('${n[0]}')">${icon(n[1])}${n[2]}</button>`).join('')}
-        ${b(icon('arrow-left-right')+'Roles','switcher()','')}
+        ${nav.map(n=>`<button class="${screen===n[0]?'active':''}" onclick="go('${n[0]}')">${icon(n[1])}<span>${n[2]}</span></button>`).join('')}
+        <button onclick="switcher()">${icon('arrow-left-right')}<span>Roles</span></button>
       </nav>
     </div>
     ${screen==='menu'&&db.cart.length?b(icon('bag')+` ${db.cart.reduce((n,x)=>n+x.qty,0)} items · ${money(subtotal(db.cart))} <span style="margin-left:25px">View cart →</span>`,'cartDrawer()','cartfloat'):''}
